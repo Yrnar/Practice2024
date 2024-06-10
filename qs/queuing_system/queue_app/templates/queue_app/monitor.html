@@ -1,0 +1,80 @@
+{% extends 'queue_app/base.html' %}
+
+{% block content %}
+<script>
+    let announcedBachelorTickets = new Set();
+    let announcedMagistracyTickets = new Set();
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const eventSource = new EventSource('/sse/');
+        eventSource.onmessage = function(e) {
+            const data = JSON.parse(e.data.replace(/'/g, '"'));
+            const bachelorQueueList = document.getElementById('bachelor-queue-list');
+            const magistracyQueueList = document.getElementById('magistracy-queue-list');
+            const servedBachelorList = document.getElementById('served-bachelor-list');
+            const servedMagistracyList = document.getElementById('served-magistracy-list');
+            bachelorQueueList.innerHTML = '';
+            magistracyQueueList.innerHTML = '';
+            servedBachelorList.innerHTML = '';
+            servedMagistracyList.innerHTML = '';
+            data.bachelor.forEach(ticket => {
+                const li = document.createElement('li');
+                li.textContent = ticket.ticket_number;
+                bachelorQueueList.appendChild(li);
+            });
+            data.magistracy.forEach(ticket => {
+                const li = document.createElement('li');
+                li.textContent = ticket.ticket_number;
+                magistracyQueueList.appendChild(li);
+            });
+            data.last_served_bachelor.forEach(ticket => {
+                const li = document.createElement('li');
+                li.textContent = ticket;
+                servedBachelorList.appendChild(li);
+                if (!announcedBachelorTickets.has(ticket)) {
+                    announceTicket(ticket);
+                    announcedBachelorTickets.add(ticket);
+                }
+            });
+            data.last_served_magistracy.forEach(ticket => {
+                const li = document.createElement('li');
+                li.textContent = ticket;
+                servedMagistracyList.appendChild(li);
+                if (!announcedMagistracyTickets.has(ticket)) {
+                    announceTicket(ticket);
+                    announcedMagistracyTickets.add(ticket);
+                }
+            });
+        };
+    });
+
+    function announceTicket(ticket) {
+        const utterance = new SpeechSynthesisUtterance('Ticket number ' + ticket + ' has been served');
+        window.speechSynthesis.speak(utterance);
+    }
+</script>
+<section>
+    <h2>Last Served Bachelor Tickets</h2>
+    <ul id="served-bachelor-list" class="queue-list"></ul>
+</section>
+<section>
+    <h2>Last Served Magistracy Tickets</h2>
+    <ul id="served-magistracy-list" class="queue-list"></ul>
+</section>
+<section>
+    <h2>Bachelor Queue</h2>
+    <ul id="bachelor-queue-list" class="queue-list">
+        {% for ticket in bachelor_queue %}
+            <li>{{ ticket.ticket_number }}</li>
+        {% endfor %}
+    </ul>
+</section>
+<section>
+    <h2>Magistracy Queue</h2>
+    <ul id="magistracy-queue-list" class="queue-list">
+        {% for ticket in magistracy_queue %}
+            <li>{{ ticket.ticket_number }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

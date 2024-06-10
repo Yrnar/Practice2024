@@ -1,0 +1,55 @@
+{% extends 'queue_app/base.html' %}
+
+{% block content %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const eventSource = new EventSource('/sse/');
+        eventSource.onmessage = function(e) {
+            const data = JSON.parse(e.data.replace(/'/g, '"'));
+            const bachelorQueueList = document.getElementById('bachelor-queue-list');
+            const magistracyQueueList = document.getElementById('magistracy-queue-list');
+            bachelorQueueList.innerHTML = '';
+            magistracyQueueList.innerHTML = '';
+            data.bachelor.forEach(ticket => {
+                const li = document.createElement('li');
+                li.textContent = ticket.ticket_number;
+                const serveButton = document.createElement('a');
+                serveButton.href = '/serve_ticket/' + ticket.id + '/';
+                serveButton.textContent = 'Serve';
+                serveButton.className = 'btn btn-serve';
+                li.appendChild(serveButton);
+                bachelorQueueList.appendChild(li);
+            });
+            data.magistracy.forEach(ticket => {
+                const li = document.createElement('li');
+                li.textContent = ticket.ticket_number;
+                const serveButton = document.createElement('a');
+                serveButton.href = '/serve_ticket/' + ticket.id + '/';
+                serveButton.textContent = 'Serve';
+                serveButton.className = 'btn btn-serve';
+                li.appendChild(serveButton);
+                magistracyQueueList.appendChild(li);
+            });
+        };
+    });
+</script>
+<section>
+    <h2>Bachelor Queue</h2>
+    <ul id="bachelor-queue-list" class="queue-list">
+        {% for ticket in bachelor_queue %}
+            <li>{{ ticket.ticket_number }} 
+                <a href="{% url 'serve_ticket' ticket.id %}" class="btn btn-serve">Serve</a>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+<section>
+    <h2>Magistracy Queue</h2>
+    <ul id="magistracy-queue-list" class="queue-list">
+        {% for ticket in magistracy_queue %}
+            <li>{{ ticket.ticket_number }} 
+                <a href="{% url 'serve_ticket' ticket.id %}" class="btn btn-serve">Serve</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

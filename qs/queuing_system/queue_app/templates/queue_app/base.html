@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Queue System</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'queue_app/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Queue System</h1>
+        </header>
+        <main>
+            {% block content %}
+            {% endblock %}
+        </main>
+        <footer>
+            <p>&copy; 2024 Queue System</p>
+        </footer>
+    </div>
+</body>
+</html>
