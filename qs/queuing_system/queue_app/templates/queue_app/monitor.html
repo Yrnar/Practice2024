@@ -1,6 +1,44 @@
 {% extends 'queue_app/base.html' %}
 
 {% block content %}
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .content {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        padding: 20px;
+    }
+    .section {
+        width: 48%;
+        margin-right: 200px; /* Add some space between the sections */
+    }
+    .section:last-child {
+        margin-right: 0; /* Remove right margin for the last section */
+    }
+    .queue-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+        margin-bottom: 20px; /* Add some space below each list */
+    }
+    .queue-list li {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+    .queue-list li:last-child {
+        border-bottom: none;
+    }
+</style>
 <script>
     let announcedBachelorTickets = new Set();
     let announcedMagistracyTickets = new Set();
@@ -17,22 +55,24 @@
             magistracyQueueList.innerHTML = '';
             servedBachelorList.innerHTML = '';
             servedMagistracyList.innerHTML = '';
-            data.bachelor.forEach(ticket => {
+
+            data.bachelor.slice(0, 4).forEach(ticket => {
                 const li = document.createElement('li');
                 li.textContent = ticket.ticket_number;
                 bachelorQueueList.appendChild(li);
             });
-            data.magistracy.forEach(ticket => {
+            data.magistracy.slice(0, 4).forEach(ticket => {
                 const li = document.createElement('li');
                 li.textContent = ticket.ticket_number;
                 magistracyQueueList.appendChild(li);
             });
+
             data.last_served_bachelor.forEach(ticket => {
                 const li = document.createElement('li');
                 li.textContent = ticket;
                 servedBachelorList.appendChild(li);
                 if (!announcedBachelorTickets.has(ticket)) {
-                    announceTicket(ticket);
+                    announceTicket(ticket, 'Bachelor');
                     announcedBachelorTickets.add(ticket);
                 }
             });
@@ -41,40 +81,46 @@
                 li.textContent = ticket;
                 servedMagistracyList.appendChild(li);
                 if (!announcedMagistracyTickets.has(ticket)) {
-                    announceTicket(ticket);
+                    announceTicket(ticket, 'Magistracy');
                     announcedMagistracyTickets.add(ticket);
                 }
             });
         };
     });
 
-    function announceTicket(ticket) {
-        const utterance = new SpeechSynthesisUtterance('Ticket number ' + ticket + ' has been served');
+    function announceTicket(ticket, type) {
+        const utterance = new SpeechSynthesisUtterance(`Ticket number ${ticket} from ${type} queue has been served`);
         window.speechSynthesis.speak(utterance);
     }
 </script>
-<section>
-    <h2>Last Served Bachelor Tickets</h2>
-    <ul id="served-bachelor-list" class="queue-list"></ul>
-</section>
-<section>
-    <h2>Last Served Magistracy Tickets</h2>
-    <ul id="served-magistracy-list" class="queue-list"></ul>
-</section>
-<section>
-    <h2>Bachelor Queue</h2>
-    <ul id="bachelor-queue-list" class="queue-list">
-        {% for ticket in bachelor_queue %}
-            <li>{{ ticket.ticket_number }}</li>
-        {% endfor %}
-    </ul>
-</section>
-<section>
-    <h2>Magistracy Queue</h2>
-    <ul id="magistracy-queue-list" class="queue-list">
-        {% for ticket in magistracy_queue %}
-            <li>{{ ticket.ticket_number }}</li>
-        {% endfor %}
-    </ul>
-</section>
+<div class="content">
+    <div class="section">
+        <section>
+            <h2>Last Served Bachelor Tickets</h2>
+            <ul id="served-bachelor-list" class="queue-list"></ul>
+        </section>
+        <section>
+            <h2>Last Served Magistracy Tickets</h2>
+            <ul id="served-magistracy-list" class="queue-list"></ul>
+        </section>
+    </div>
+    <div class="section">
+        <section>
+            <h2>Bachelor Queue</h2>
+            <ul id="bachelor-queue-list" class="queue-list">
+                {% for ticket in bachelor_queue|slice:":4" %}
+                    <li>{{ ticket.ticket_number }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+        <section>
+            <h2>Magistracy Queue</h2>
+            <ul id="magistracy-queue-list" class="queue-list">
+                {% for ticket in magistracy_queue|slice:":4" %}
+                    <li>{{ ticket.ticket_number }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+</div>
 {% endblock %}
