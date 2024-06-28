@@ -69,27 +69,27 @@
 
             data.last_served_bachelor.forEach(ticket => {
                 const li = document.createElement('li');
-                li.textContent = ticket;
+                li.textContent = `Ticket ${ticket.ticket_number} (Table ${ticket.served_by_table})`;
                 servedBachelorList.appendChild(li);
-                if (!announcedBachelorTickets.has(ticket)) {
-                    announceTicket(ticket, 'Bachelor');
-                    announcedBachelorTickets.add(ticket);
+                if (!announcedBachelorTickets.has(ticket.ticket_number)) {
+                    announceTicket(ticket.ticket_number, ticket.served_by_table);
+                    announcedBachelorTickets.add(ticket.ticket_number);
                 }
             });
             data.last_served_magistracy.forEach(ticket => {
                 const li = document.createElement('li');
-                li.textContent = ticket;
+                li.textContent = `Ticket ${ticket.ticket_number} (Table ${ticket.served_by_table})`;
                 servedMagistracyList.appendChild(li);
-                if (!announcedMagistracyTickets.has(ticket)) {
-                    announceTicket(ticket, 'Magistracy');
-                    announcedMagistracyTickets.add(ticket);
+                if (!announcedMagistracyTickets.has(ticket.ticket_number)) {
+                    announceTicket(ticket.ticket_number, ticket.served_by_table);
+                    announcedMagistracyTickets.add(ticket.ticket_number);
                 }
             });
         };
     });
 
-    function announceTicket(ticket, type) {
-        const utterance = new SpeechSynthesisUtterance(`Ticket number ${ticket} from ${type} queue has been served`);
+    function announceTicket(ticket, table) {
+        const utterance = new SpeechSynthesisUtterance(`Ticket number ${ticket} has been served at table number ${table}`);
         window.speechSynthesis.speak(utterance);
     }
 </script>
@@ -123,4 +123,5 @@
         </section>
     </div>
 </div>
+</footer>
 {% endblock %}

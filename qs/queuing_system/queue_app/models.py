@@ -10,6 +10,7 @@ class Queue(models.Model):
     queue_type = models.CharField(max_length=1, choices=QUEUE_TYPE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     served = models.BooleanField(default=False)
+    served_by_table = models.IntegerField(null=True, blank=True)
 
     @staticmethod
     def generate_next_ticket_number(queue_type):

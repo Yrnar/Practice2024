@@ -1,55 +1,180 @@
-{% extends 'queue_app/base.html' %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Operator View</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        .queue-section {
+            margin-bottom: 40px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #e9e9e9;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        form {
+            display: flex;
+            align-items: center;
+        }
+        .form-control {
+            margin-right: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .button-group {
+            display: flex;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const eventSource = new EventSource('/sse_operator/');
+            eventSource.onmessage = function(e) {
+                const data = JSON.parse(e.data.replace(/'/g, '"'));
+                const bachelorQueueList = document.getElementById('bachelor-queue-list');
+                const magistracyQueueList = document.getElementById('magistracy-queue-list');
+                bachelorQueueList.innerHTML = '';
+                magistracyQueueList.innerHTML = '';
 
-{% block content %}
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const eventSource = new EventSource('/sse/');
-        eventSource.onmessage = function(e) {
-            const data = JSON.parse(e.data.replace(/'/g, '"'));
-            const bachelorQueueList = document.getElementById('bachelor-queue-list');
-            const magistracyQueueList = document.getElementById('magistracy-queue-list');
-            bachelorQueueList.innerHTML = '';
-            magistracyQueueList.innerHTML = '';
-            data.bachelor.forEach(ticket => {
-                const li = document.createElement('li');
-                li.textContent = ticket.ticket_number;
-                const serveButton = document.createElement('a');
-                serveButton.href = '/serve_ticket/' + ticket.id + '/';
-                serveButton.textContent = 'Serve';
-                serveButton.className = 'btn btn-serve';
-                li.appendChild(serveButton);
-                bachelorQueueList.appendChild(li);
+                data.bachelor.forEach(ticket => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${ticket.ticket_number}</span>
+                        <div class="button-group">
+                            ${[...Array(10).keys()].map(i => `
+                                <form class="serve-form" data-ticket-id="${ticket.id}" method="post">
+                                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}">
+                                    <input type="hidden" name="table_number" value="${i+1}">
+                                    <button type="submit">Table ${i+1}</button>
+                                </form>
+                            `).join('')}
+                        </div>
+                    `;
+                    bachelorQueueList.appendChild(li);
+                });
+
+                data.magistracy.forEach(ticket => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${ticket.ticket_number}</span>
+                        <div class="button-group">
+                            ${[...Array(10).keys()].map(i => `
+                                <form class="serve-form" data-ticket-id="${ticket.id}" method="post">
+                                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}">
+                                    <input type="hidden" name="table_number" value="${i+1}">
+                                    <button type="submit">Table ${i+1}</button>
+                                </form>
+                            `).join('')}
+                        </div>
+                    `;
+                    magistracyQueueList.appendChild(li);
+                });
+
+                // Add event listeners to forms
+                document.querySelectorAll('.serve-form').forEach(form => {
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        submitForm(this);
+                    });
+                });
+            };
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function submitForm(form) {
+            const formData = new FormData(form);
+            const ticketId = form.getAttribute('data-ticket-id');
+
+            fetch(`/serve_ticket/${ticketId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Failed to serve ticket.');
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    form.closest('li').remove();  // Remove the ticket from the list
+                } else {
+                    alert('Failed to serve ticket.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
             });
-            data.magistracy.forEach(ticket => {
-                const li = document.createElement('li');
-                li.textContent = ticket.ticket_number;
-                const serveButton = document.createElement('a');
-                serveButton.href = '/serve_ticket/' + ticket.id + '/';
-                serveButton.textContent = 'Serve';
-                serveButton.className = 'btn btn-serve';
-                li.appendChild(serveButton);
-                magistracyQueueList.appendChild(li);
-            });
-        };
-    });
-</script>
-<section>
-    <h2>Bachelor Queue</h2>
-    <ul id="bachelor-queue-list" class="queue-list">
-        {% for ticket in bachelor_queue %}
-            <li>{{ ticket.ticket_number }} 
-                <a href="{% url 'serve_ticket' ticket.id %}" class="btn btn-serve">Serve</a>
-            </li>
-        {% endfor %}
-    </ul>
-</section>
-<section>
-    <h2>Magistracy Queue</h2>
-    <ul id="magistracy-queue-list" class="queue-list">
-        {% for ticket in magistracy_queue %}
-            <li>{{ ticket.ticket_number }} 
-                <a href="{% url 'serve_ticket' ticket.id %}" class="btn btn-serve">Serve</a>
-            </li>
-        {% endfor %}
-    </ul>
-{% endblock %}
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Operator View</h1>
+        <div class="queue-section">
+            <h2>Bachelor Queue</h2>
+            <ul id="bachelor-queue-list">
+                <!-- Dynamically populated via SSE -->
+            </ul>
+        </div>
+        <div class="queue-section">
+            <h2>Magistracy Queue</h2>
+            <ul id="magistracy-queue-list">
+                <!-- Dynamically populated via SSE -->
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
